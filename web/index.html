@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head><meta charset="UTF-8"><title>티켓 예매</title></head>
+<body>
+  <h1>티켓 예매 서비스</h1>
+  <p id="status">서버 확인 중...</p>
+  <script>
+    fetch("/api/health")
+      .then(r => r.json())
+      .then(d => document.getElementById("status").textContent = "서버 상태: " + d.status)
+      .catch(() => document.getElementById("status").textContent = "서버 연결 실패");
+  </script>
+</body>
+</html>
