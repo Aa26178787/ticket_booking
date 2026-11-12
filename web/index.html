@@ -1,14 +1,158 @@
 <!DOCTYPE html>
 <html lang="ko">
-<head><meta charset="UTF-8"><title>티켓 예매</title></head>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>티켓 예매</title>
+<style>
+  body { font-family: sans-serif; max-width: 560px; margin: 24px auto; padding: 0 12px; }
+  .row { display: flex; gap: 8px; margin-bottom: 12px; }
+  .row select, .row input { flex: 1; padding: 8px; font-size: 15px; }
+  .grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; margin: 12px 0; }
+  .seat { padding: 10px 0; border: none; border-radius: 6px; color: #fff; font-size: 14px; }
+  .available { background: #2e9e5b; cursor: pointer; }
+  .held { background: #e08a1e; cursor: not-allowed; }
+  .mine { background: #2b6fd6; }
+  .booked { background: #999; cursor: not-allowed; }
+  .legend span { margin-right: 12px; font-size: 13px; }
+  #msg { min-height: 1.5em; font-weight: bold; }
+  .ok { color: #2e9e5b; }
+  .err { color: #c0392b; }
+  #panel { display: none; border: 1px solid #ccc; border-radius: 8px; padding: 12px; margin-top: 12px; }
+  #panel button { padding: 8px 14px; font-size: 15px; margin-right: 8px; }
+</style>
+</head>
 <body>
-  <h1>티켓 예매 서비스</h1>
-  <p id="status">서버 확인 중...</p>
-  <script>
-    fetch("/api/health")
-      .then(r => r.json())
-      .then(d => document.getElementById("status").textContent = "서버 상태: " + d.status)
-      .catch(() => document.getElementById("status").textContent = "서버 연결 실패");
-  </script>
+  <h1>티켓 예매</h1>
+
+  <div class="row">
+    <select id="event"></select>
+    <input id="nick" placeholder="닉네임" maxlength="20">
+  </div>
+
+  <div class="legend">
+    <span>🟩 예매 가능</span><span>🟦 내 선택</span><span>🟧 선택 중</span><span>⬜ 예매 완료</span>
+  </div>
+
+  <div class="grid" id="grid"></div>
+  <div id="msg"></div>
+
+  <div id="panel">
+    <div>선택한 좌석: <b id="pSeat"></b> / 남은 시간: <b id="pTime"></b></div>
+    <p>
+      <button id="btnConfirm">결제 완료</button>
+      <button id="btnCancel">취소</button>
+    </p>
+  </div>
+
+<script>
+const $ = id => document.getElementById(id);
+let myHold = null; // { eventId, seat, nickname, expiresAt }
+
+function show(text, isError) {
+  $("msg").textContent = text;
+  $("msg").className = isError ? "err" : "ok";
+}
+
+async function api(path, method = "GET", body) {
+  const res = await fetch("/api" + path, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || "요청 실패 (" + res.status + ")");
+  return data;
+}
+
+async function loadEvents() {
+  const data = await api("/events");
+  data.events.forEach(e => {
+    const opt = document.createElement("option");
+    opt.value = e.id;
+    opt.textContent = e.name;
+    $("event").appendChild(opt);
+  });
+  await loadSeats();
+}
+
+async function loadSeats() {
+  try {
+    const eventId = $("event").value;
+    const data = await api(`/events/${eventId}/seats`);
+    const grid = $("grid");
+    grid.innerHTML = "";
+    data.seats.forEach(s => {
+      const btn = document.createElement("button");
+      btn.textContent = s.seat;
+      let cls = s.status === "available" ? "available" : s.status === "booked" ? "booked" : "held";
+      if (s.status === "held" && myHold && myHold.eventId === eventId && myHold.seat === s.seat) cls = "mine";
+      btn.className = "seat " + cls;
+      if (s.status === "available") btn.onclick = () => holdSeat(eventId, s.seat);
+      grid.appendChild(btn);
+    });
+  } catch (e) {
+    show(e.message, true);
+  }
+}
+
+async function holdSeat(eventId, seat) {
+  if (myHold) return show("이미 선택한 좌석이 있습니다. 결제하거나 취소하세요.", true);
+  try {
+    const d = await api(`/events/${eventId}/seats/${seat}/hold`, "POST", { nickname: $("nick").value });
+    myHold = { eventId, seat, nickname: d.nickname, expiresAt: Date.now() + d.expires_in * 1000 };
+    show(`${seat} 좌석을 임시 확보했습니다.`);
+  } catch (e) {
+    show(e.message, true);
+  }
+  renderPanel();
+  await loadSeats();
+}
+
+async function confirmSeat() {
+  if (!myHold) return;
+  try {
+    await api(`/events/${myHold.eventId}/seats/${myHold.seat}/confirm`, "POST", { nickname: myHold.nickname });
+    show(`${myHold.seat} 좌석 예매가 완료되었습니다.`);
+    myHold = null;
+  } catch (e) {
+    show(e.message, true);
+    if (Date.now() >= myHold.expiresAt) myHold = null;
+  }
+  renderPanel();
+  await loadSeats();
+}
+
+async function cancelSeat() {
+  if (!myHold) return;
+  try {
+    await api(`/events/${myHold.eventId}/seats/${myHold.seat}/hold`, "DELETE", { nickname: myHold.nickname });
+    show(`${myHold.seat} 좌석 선택을 취소했습니다.`);
+    myHold = null;
+  } catch (e) {
+    show(e.message, true);
+    if (Date.now() >= myHold.expiresAt) myHold = null;
+  }
+  renderPanel();
+  await loadSeats();
+}
+
+function renderPanel() {
+  if (!myHold) { $("panel").style.display = "none"; return; }
+  $("panel").style.display = "block";
+  $("pSeat").textContent = myHold.seat;
+  const left = Math.max(0, Math.ceil((myHold.expiresAt - Date.now()) / 1000));
+  const m = String(Math.floor(left / 60)).padStart(2, "0");
+  const s = String(left % 60).padStart(2, "0");
+  $("pTime").textContent = left > 0 ? `${m}:${s}` : "00:00 (만료됨)";
+}
+
+$("event").onchange = loadSeats;
+$("btnConfirm").onclick = confirmSeat;
+$("btnCancel").onclick = cancelSeat;
+setInterval(renderPanel, 1000);
+setInterval(loadSeats, 3000);
+loadEvents();
+</script>
 </body>
 </html>
