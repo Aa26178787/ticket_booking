@@ -4,7 +4,7 @@
 
 - 배포 주소: http://<퍼블릭IP>:8080 (검사 완료까지 유지)
 - 저장소: https://github.com/Aa26178787/ticket_booking
-- 작업 버전: 901ce97
+- 작업 버전: 69f8f7b
 
 ## 1. 서비스 소개
 
@@ -71,7 +71,7 @@ flowchart LR
 
 ### 사전 준비
 
-Git, Docker(Compose 포함)
+Git, Docker
 
 ### 로컬 실행
 
@@ -91,7 +91,7 @@ docker compose up -d --build
    ```bash
    sudo apt-get update
    sudo apt-get install -y docker.io docker-compose-v2 git
-   sudo usermod -aG docker $USER   # 재접속 후 적용
+   sudo usermod -aG docker $USER
    ```
 
 3. 저장소를 받아 실행합니다.
@@ -133,20 +133,22 @@ docker compose up -d --build
 | 3 | 정상 | 확보 시간 내 결제 완료 | 예매 완료, 모든 사용자에게 반영 | <기록> |
 | 3 | 경계 | 확보 만료 후 결제 시도 | "확보 시간이 만료되었습니다", 좌석 다시 예매 가능 | <기록> |
 
-스크린샷은 `docs/` 폴더에 있습니다.
-
-<!-- 예: ![기능2 정상](docs/test2-normal.png) -->
-
 ## 5. 기록
 
 ### 팀 역할
 
-<이름: 담당 업무>
+최재관: 전체 개발 작업
 
 ### AI 활용
 
-<사용한 AI와 용도를 실제대로 기록. 에이전틱 코딩 도구 사용 여부도 명시>
-
-### 검사 후 자원 정리
-
-검사 완료 후 프로젝트용 EC2 인스턴스와 보안 그룹 규칙을 삭제합니다. GitHub 저장소와 README는 보존합니다.
+- 사용 도구: Claude 
+- 활용 범위
+  - 주제 후보 제안
+  - 구조 설계 상담: Nginx → Flask → Redis 구성, 좌석 임시 확보에 Redis `SET NX EX`를 쓰는 방식
+  - Flask API, Dockerfile, Docker Compose, 화면(HTML/JS) 코드 초안과 시험 절차 제안
+  - 배포 중 오류 원인 질문: docker 권한 오류, 보안 그룹 소스 IP 제한
+  - README 구조 초안
+- 직접 수행·검증한 일
+  - 개발 환경 설치, 로컬 Compose 실행
+  - AWS EC2 사용, 보안 그룹 설정, 서버 배포
+  - 배포 주소에서 기능 3개 정상·실패 시험 6건 실행과 결과 기록
