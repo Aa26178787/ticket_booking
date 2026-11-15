@@ -4,7 +4,7 @@
 
 - 배포 주소: http://<퍼블릭IP>:8080 
 - 저장소: https://github.com/Aa26178787/ticket_booking
-- 작업 버전: <커밋 해시>
+- 작업 버전: 1cc26b8
 
 ## 1. 서비스 소개
 
@@ -181,6 +181,6 @@ docker compose exec redis redis-cli FLUSHALL   # 예매 데이터 초기화(필�
 ### AI 사용
 - 사용 여부: O
 - 사용 도구: Claude
-- 활용 범위: UI 작업 및 app.py 구조 작성
+- 활용 범위: 서비스 구조 설계 및 UI 작업, app.py 작성
 - 직접 수행·확인한 결과: EC2 배포와 보안 그룹 설정, 프로젝트 구성 
 
