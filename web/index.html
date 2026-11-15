@@ -3,234 +3,151 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TICKET·ON - 티켓 예매</title>
-<style>
-  :root {
-    --navy: #16162b; --red: #e5173f; --vip: #7b4bd8; --r: #2b6fd6; --s: #2e9e5b;
-    --held: #e08a1e; --booked: #c9c9d1; --line: #e5e5ea;
-  }
-  * { box-sizing: border-box; }
-  body { margin: 0; font-family: "Noto Sans KR", "Malgun Gothic", sans-serif; background: #f4f4f8; color: #222; }
-  button { font-family: inherit; }
-  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
-
-  /* 헤더 */
-  header { background: var(--navy); color: #fff; position: sticky; top: 0; z-index: 10; }
-  .hbar { display: flex; align-items: center; gap: 24px; height: 60px; }
-  .logo { display: flex; align-items: center; font-size: 22px; font-weight: 800; letter-spacing: 1px; line-height: 1; cursor: pointer; }
-  .logo span { color: var(--red); line-height: 1; }
-  nav { display: flex; gap: 6px; flex: 1; }
-  nav a { padding: 8px 14px; border-radius: 20px; cursor: pointer; color: #c9c9e0; font-size: 15px; }
-  nav a.on { background: rgba(255, 255, 255, .14); color: #fff; }
-  .who input { padding: 8px 14px; border-radius: 20px; border: none; width: 150px; font-size: 14px; text-align: center; }
-
-  /* 메인 배너 */
-  .hero { background: linear-gradient(120deg, #16162b, #3a1c71 60%, #e5173f); color: #fff; padding: 44px 0; }
-  .hero h1 { margin: 0 0 8px; font-size: 30px; }
-  .hero p { margin: 0; color: #e0e0f0; }
-  .badge { display: inline-flex; align-items: center; justify-content: center; background: var(--red); color: #fff; border-radius: 4px; padding: 6px 10px; line-height: 1; font-size: 12px; font-weight: 700; margin-bottom: 12px; }
-  h2.sec { margin: 28px 0 14px; font-size: 20px; }
-
-  /* 경기 카드 */
-  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
-  .card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0, 0, 0, .08); }
-  .poster { height: 150px; color: #fff; padding: 16px; display: flex; flex-direction: column; justify-content: flex-end; }
-  .poster h3 { margin: 6px 0 0; font-size: 19px; }
-  .poster .tag { font-size: 12px; background: rgba(255, 255, 255, .25); align-self: flex-start; padding: 2px 8px; border-radius: 10px; }
-  .p0 { background: linear-gradient(135deg, #1e3c72, #2a5298); }
-  .p1 { background: linear-gradient(135deg, #7b4bd8, #e5173f); }
-  .p2 { background: linear-gradient(135deg, #11998e, #38ef7d); }
-  .cinfo { padding: 16px; display: grid; gap: 6px; font-size: 14px; color: #555; }
-  .btn { margin-top: 8px; background: var(--red); color: #fff; border: none; border-radius: 8px; padding: 11px; font-size: 15px; font-weight: 700; cursor: pointer; }
-  .btn:disabled { background: #bbb; cursor: not-allowed; }
-  .btn.sub { background: #fff; color: #444; border: 1px solid #ccc; }
-
-  /* 예매 화면 */
-  .steps { display: flex; gap: 8px; margin: 20px 0 16px; }
-  .step { flex: 1; text-align: center; padding: 10px; background: #e9e9f0; color: #888; border-radius: 8px; font-size: 14px; font-weight: 700; }
-  .step.on { background: var(--navy); color: #fff; }
-  .step.done { background: #cfd0e6; color: var(--navy); }
-  .book { display: grid; grid-template-columns: 1fr 320px; gap: 20px; align-items: start; }
-  .box { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 10px rgba(0, 0, 0, .06); }
-  .box h3 { margin: 0 0 4px; font-size: 20px; }
-  .meta { color: #666; font-size: 14px; margin-bottom: 16px; }
-  .stage { background: #333; color: #fff; text-align: center; padding: 8px; border-radius: 0 0 40px 40px; margin: 0 auto 20px; max-width: 420px; letter-spacing: 8px; font-size: 13px; }
-  .row { display: flex; gap: 6px; align-items: center; justify-content: center; margin-bottom: 7px; }
-  .rl { width: 22px; font-size: 12px; color: #888; text-align: center; }
-  .seat { width: 40px; height: 34px; border: none; border-radius: 6px 6px 3px 3px; color: #fff; font-size: 12px; cursor: pointer; }
-  .seat.g-vip { background: var(--vip); }
-  .seat.g-r { background: var(--r); }
-  .seat.g-s { background: var(--s); }
-  .seat.held { background: var(--held); cursor: not-allowed; }
-  .seat.booked { background: var(--booked); color: #999; cursor: not-allowed; }
-  .seat.mine { background: var(--red); outline: 3px solid #ffc2cc; }
-  .seat:not(:disabled):hover { filter: brightness(1.15); }
-  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; font-size: 13px; color: #555; }
-  .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
-  .panel { position: sticky; top: 76px; }
-  .panel h3 { font-size: 17px; margin-bottom: 14px; }
-  .kv { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
-  .kv b { text-align: right; }
-  .total { font-size: 20px; color: var(--red); }
-  .timer { color: var(--red); font-weight: 800; }
-  .pbtns { display: grid; gap: 8px; margin-top: 16px; }
-
-  /* 예매 확인 */
-  .ticket { display: flex; background: #fff; border-radius: 12px; overflow: hidden; margin-bottom: 14px; box-shadow: 0 2px 10px rgba(0, 0, 0, .08); }
-  .t-main { flex: 1; padding: 18px; }
-  .t-main h4 { margin: 0 0 8px; font-size: 18px; }
-  .t-main div { font-size: 14px; color: #555; margin-top: 4px; }
-  .t-side { width: 190px; border-left: 2px dashed #ccc; padding: 18px; text-align: center; display: grid; align-content: center; gap: 8px; }
-  .t-no { font-size: 12px; color: #888; }
-  .t-num { font-weight: 800; font-size: 18px; letter-spacing: 1px; }
-  .empty { background: #fff; border-radius: 12px; padding: 40px; text-align: center; color: #888; }
-  .myhead { display: flex; gap: 10px; margin-bottom: 16px; }
-  .myhead .btn { margin: 0; padding: 10px 18px; }
-  .myhead span { align-self: center; color: #666; font-size: 14px; }
-
-  /* 완료 모달 */
-  #modal { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, .55); z-index: 50; align-items: center; justify-content: center; padding: 16px; }
-  #modal .inner { background: #fff; border-radius: 14px; width: 100%; max-width: 430px; padding: 26px; text-align: center; }
-  #modal h3 { margin: 0 0 4px; font-size: 22px; color: var(--red); }
-  #modal .ticket { box-shadow: none; border: 1px solid var(--line); text-align: left; }
-  #modal .t-side { width: 130px; }
-
-  /* 알림 */
-  #toast { position: fixed; left: 50%; bottom: 30px; transform: translateX(-50%); padding: 12px 22px; border-radius: 24px; color: #fff; font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 60; max-width: 90%; }
-  #toast.show { opacity: 1; }
-  #toast.ok { background: #2d3a4a; }
-  #toast.err { background: #c0392b; }
-
-  footer { margin: 40px 0 30px; text-align: center; color: #999; font-size: 12px; }
-
-  @media (max-width: 820px) {
-    .book { grid-template-columns: 1fr; }
-    .panel { position: static; }
-    .ticket { flex-direction: column; }
-    .t-side { width: auto; border-left: none; border-top: 2px dashed #ccc; }
-    .who input { width: 110px; }
-    .hbar { gap: 10px; }
-    .logo { font-size: 18px; }
-  }
-</style>
+<title>TICKET·ON - 스포츠·공연 티켓 예매</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<header>
-  <div class="wrap hbar">
-    <div class="logo" onclick="go('home')">TICKET<span>·ON</span></div>
-    <nav>
-      <a id="nav-home" class="on" onclick="go('home')">경기·공연</a>
-      <a id="nav-my" onclick="go('my')">예매확인/취소</a>
+<header class="top">
+  <div class="wrap">
+    <div class="logo" onclick="go('home')"><span class="mark">T</span><span>TICKET<em>·ON</em></span></div>
+    <nav class="tabs">
+      <button class="tab on" id="tab-home" onclick="go('home')">경기·공연</button>
+      <button class="tab" id="tab-my" onclick="go('my')">예매확인/취소</button>
     </nav>
-    <div class="who"><input id="nick" placeholder="닉네임 입력" maxlength="20"></div>
+    <div class="nick">
+      <label for="nick">예매자</label>
+      <input id="nick" placeholder="닉네임 입력" maxlength="20" autocomplete="off">
+    </div>
   </div>
 </header>
 
-<!-- 메인 -->
-<section id="view-home">
-  <div class="hero">
-    <div class="wrap">
-      <div class="badge">예매 오픈</div>
-      <h1>원하는 좌석, 지금 바로 예매하세요</h1>
-      <p>좌석을 선택하면 5분간 확보되고, 결제까지 완료하면 예매가 확정됩니다.</p>
+<!-- 홈 -->
+<main id="view-home" class="wrap">
+  <section class="hero">
+    <div class="hero-in">
+      <div>
+        <span class="pill hot">예매 오픈</span>
+        <h1>오늘의 빅매치,<br>좋은 자리는 먼저 잡는 사람의 것</h1>
+        <p>좌석을 고르면 5분 동안 내 자리로 확보돼요. 시간 안에 결제하면 예매 완료!</p>
+        <div class="cta">
+          <button class="btn" onclick="document.getElementById('list').scrollIntoView({behavior:'smooth'})">예매하러 가기</button>
+          <button class="btn ghost" onclick="go('my')">내 예매 확인</button>
+        </div>
+      </div>
+      <div class="hero-ticket">
+        <div class="lb">1인 최대</div>
+        <div class="big" id="heroMax">4매</div>
+        <div class="row2"><span>좌석 확보 시간</span><b>5분</b></div>
+      </div>
     </div>
-  </div>
-  <div class="wrap">
-    <h2 class="sec">예매 가능한 경기·공연</h2>
-    <div class="cards" id="cards"></div>
-  </div>
-</section>
+  </section>
+
+  <div class="sec-h" id="list"><h2>지금 예매 중</h2><span id="evCount"></span></div>
+  <div class="grid" id="cards"></div>
+</main>
 
 <!-- 예매 -->
-<section id="view-book" style="display:none">
-  <div class="wrap">
-    <div class="steps">
-      <div class="step" id="st1">STEP 1 좌석 선택</div>
-      <div class="step" id="st2">STEP 2 결제</div>
-      <div class="step" id="st3">STEP 3 예매 완료</div>
+<main id="view-book" class="wrap" style="display:none">
+  <button class="back" onclick="go('home')">← 목록으로</button>
+  <div class="ev-head">
+    <div>
+      <span class="pill gray" id="evCat"></span>
+      <h2 id="evTitle"></h2>
+      <div class="meta" id="evMeta"></div>
     </div>
-    <div class="book">
-      <div class="box">
-        <h3 id="evTitle"></h3>
-        <div class="meta" id="evMeta"></div>
-        <div class="stage">STAGE</div>
-        <div id="seatmap"></div>
-        <div class="legend">
-          <span><i style="background:var(--vip)"></i>VIP석 50,000원</span>
-          <span><i style="background:var(--r)"></i>R석 35,000원</span>
-          <span><i style="background:var(--s)"></i>일반석 20,000원</span>
-          <span><i style="background:var(--red)"></i>내 선택</span>
-          <span><i style="background:var(--held)"></i>선택 중</span>
-          <span><i style="background:var(--booked)"></i>예매 완료</span>
-        </div>
-      </div>
-      <div class="box panel">
-        <h3>예매 정보</h3>
-        <div class="kv"><span>경기</span><b id="pEvent">-</b></div>
-        <div class="kv"><span>선택 좌석</span><b id="pSeat">-</b></div>
-        <div class="kv"><span>등급</span><b id="pGrade">-</b></div>
-        <div class="kv"><span>남은 시간</span><b class="timer" id="pTime">-</b></div>
-        <div class="kv"><span>결제 금액</span><b class="total" id="pPrice">0원</b></div>
-        <div class="pbtns">
-          <button class="btn" id="btnPay" disabled>결제하기</button>
-          <button class="btn sub" id="btnRelease" disabled>선택 취소</button>
-        </div>
-      </div>
+    <div class="steps">
+      <div class="step" id="st1"><b>1</b>좌석 선택</div>
+      <div class="step" id="st2"><b>2</b>결제</div>
+      <div class="step" id="st3"><b>3</b>예매 완료</div>
     </div>
   </div>
-</section>
+
+  <div class="layout">
+    <section class="box">
+      <div class="stage">STAGE</div>
+      <div id="seatmap"></div>
+      <div class="legend">
+        <span><i style="background:var(--vip)"></i>VIP석 50,000원</span>
+        <span><i style="background:var(--r)"></i>R석 35,000원</span>
+        <span><i style="background:var(--s)"></i>일반석 20,000원</span>
+        <span><i style="background:var(--brand)"></i>내 선택</span>
+        <span><i style="background:var(--held)"></i>선택 중</span>
+        <span><i style="background:var(--booked)"></i>예매 완료</span>
+      </div>
+      <div class="hint">좌석을 누르면 선택, 선택한 좌석을 다시 누르면 해제돼요.</div>
+    </section>
+
+    <aside class="box side">
+      <h3>선택한 좌석 <span class="pill gray" id="pCount">0 / 4매</span></h3>
+      <div class="timer-box" id="timerBox"><span>남은 시간</span><b id="pTime">--:--</b></div>
+      <div class="plist" id="pList"></div>
+      <div class="sum"><span>총 결제 금액</span><b id="pPrice">0원</b></div>
+      <div class="btns">
+        <button class="btn block" id="btnPay" disabled>결제하기</button>
+        <button class="btn ghost block" id="btnRelease" disabled>선택 모두 취소</button>
+      </div>
+    </aside>
+  </div>
+</main>
 
 <!-- 예매 확인/취소 -->
-<section id="view-my" style="display:none">
-  <div class="wrap">
-    <h2 class="sec">예매 확인 / 취소</h2>
-    <div class="myhead">
-      <button class="btn" onclick="loadMy()">내 예매 내역 조회</button>
-      <span>상단의 닉네임으로 조회합니다.</span>
+<main id="view-my" class="wrap" style="display:none">
+  <div class="mp-head">
+    <div>
+      <h2>예매확인 / 취소</h2>
+      <p id="myWho">상단에 닉네임을 입력하면 예매 내역을 볼 수 있어요.</p>
     </div>
-    <div id="mylist"></div>
+    <button class="btn sm" onclick="loadMy()">새로고침</button>
   </div>
-</section>
+  <div class="tlist" id="mylist"></div>
+</main>
 
 <!-- 결제 완료 -->
-<div id="modal">
-  <div class="inner">
-    <h3>예매가 완료되었어요</h3>
-    <p style="color:#666;margin:0 0 16px">아래 예매번호로 예매 내역을 확인할 수 있어요.</p>
-    <div class="ticket">
-      <div class="t-main">
-        <h4 id="mEvent"></h4>
-        <div id="mSeat"></div>
-        <div id="mPrice"></div>
-      </div>
-      <div class="t-side">
-        <div class="t-no">예매번호</div>
-        <div class="t-num" id="mNo"></div>
-      </div>
+<div class="dim" id="modal">
+  <div class="modal">
+    <div class="mh">
+      <div class="ok">✓</div>
+      <h3>예매가 완료되었어요</h3>
+      <p>예매확인 메뉴에서 언제든 확인·취소할 수 있어요.</p>
     </div>
-    <div style="display:grid;gap:8px">
-      <button class="btn" onclick="closeModal(true)">예매 내역 보기</button>
-      <button class="btn sub" onclick="closeModal(false)">닫기</button>
+    <div class="mb">
+      <div class="kv"><span>예매번호</span><b id="mNo"></b></div>
+      <div class="kv"><span>경기</span><b id="mEvent"></b></div>
+      <div class="kv"><span>좌석</span><b id="mSeat"></b></div>
+      <div class="kv"><span>결제 금액</span><b id="mPrice"></b></div>
+      <div class="btns">
+        <button class="btn ghost" onclick="closeModal(false)">닫기</button>
+        <button class="btn" onclick="closeModal(true)">예매 내역 보기</button>
+      </div>
     </div>
   </div>
 </div>
 
 <div id="toast"></div>
 
-<footer>TICKET·ON · 클라우드 컴퓨팅 AWS 프로젝트</footer>
+<footer>
+  <div class="wrap">TICKET·ON · 클라우드 컴퓨팅 AWS 프로젝트 · Nginx · Flask · Redis on EC2</div>
+</footer>
 
 <script>
 const $ = id => document.getElementById(id);
 const won = n => Number(n).toLocaleString("ko-KR") + "원";
-let events = [], cur = null, myHold = null, paid = false, pollTimer = null;
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const GRADE_CLASS = { "VIP석": "vip", "R석": "r", "일반석": "s" };
+
+let events = [], cur = null, maxSeats = 4;
+let myHolds = {};      // { 좌석: {grade, price, expiresAt, expired} }
+let holdEvent = null;  // 선택 중인 좌석이 속한 경기
+let holdNick = "";     // 좌석을 선택할 때 쓴 닉네임
+let paid = false, pollTimer = null;
 
 function toast(text, isErr) {
   const t = $("toast");
   t.textContent = text;
   t.className = "show " + (isErr ? "err" : "ok");
   clearTimeout(toast.timer);
-  toast.timer = setTimeout(() => { t.className = ""; }, 3500);
+  toast.timer = setTimeout(() => { t.className = ""; }, 3200);
 }
 
 async function api(path, method = "GET", body) {
@@ -245,165 +162,226 @@ async function api(path, method = "GET", body) {
 }
 
 function nick() { return $("nick").value.trim(); }
-
 try { $("nick").value = localStorage.getItem("nick") || ""; } catch (e) {}
 $("nick").oninput = () => { try { localStorage.setItem("nick", $("nick").value); } catch (e) {} };
 
 /* 화면 전환 */
 function go(name) {
   ["home", "book", "my"].forEach(v => { $("view-" + v).style.display = v === name ? "block" : "none"; });
-  $("nav-home").className = name === "my" ? "" : "on";
-  $("nav-my").className = name === "my" ? "on" : "";
+  $("tab-home").className = "tab" + (name === "my" ? "" : " on");
+  $("tab-my").className = "tab" + (name === "my" ? " on" : "");
   clearInterval(pollTimer);
   if (name === "book") pollTimer = setInterval(loadSeats, 3000);
   if (name === "my") loadMy();
   window.scrollTo(0, 0);
 }
 
-/* 메인: 경기 목록 */
+/* 홈: 경기 목록 */
 async function loadEvents() {
   try {
     const d = await api("/events");
     events = d.events;
-    $("cards").innerHTML = events.map(e => `
-      <div class="card">
-        <div class="poster p${e.id % 3}"><span class="tag">${e.category}</span><h3>${e.name}</h3></div>
-        <div class="cinfo">
-          <div>📅 ${e.date}</div>
-          <div>📍 ${e.venue}</div>
-          <div>💳 ${won(e.min_price)} ~ ${won(e.max_price)}</div>
-          <button class="btn" onclick="openEvent(${e.id})">예매하기</button>
+    maxSeats = d.max_seats || 4;
+    $("heroMax").textContent = maxSeats + "매";
+    $("evCount").textContent = "총 " + events.length + "개";
+    $("cards").innerHTML = events.map(e => {
+      const vs = e.name.includes(" vs ") ? e.name.slice(e.name.lastIndexOf(" ", e.name.indexOf(" vs ") - 1) + 1) : e.name;
+      return `
+      <article class="card">
+        <div class="poster pt${e.id % 3}">
+          <div class="tags"><span class="pill soft">${esc(e.category)}</span><span class="pill hot">예매중</span></div>
+          <div class="vs">${esc(vs)}</div>
         </div>
-      </div>`).join("");
+        <div class="card-b">
+          <h3>${esc(e.name)}</h3>
+          <div class="info"><div>${esc(e.date)}</div><div>${esc(e.venue)}</div></div>
+          <div class="price"><small>좌석 가격</small><b>${won(e.min_price)} ~</b></div>
+          <button class="btn block" onclick="openEvent(${e.id})">예매하기</button>
+        </div>
+      </article>`;
+    }).join("");
   } catch (e) {
     toast(e.message, true);
   }
 }
 
+function liveCount() {
+  return Object.values(myHolds).filter(h => !h.expired && h.expiresAt > Date.now()).length;
+}
+
 async function openEvent(id) {
-  if (myHold && myHold.eventId !== id) {
-    toast("다른 경기에서 선택한 좌석이 있어요. 먼저 결제하거나 선택을 취소하세요.", true);
-    return;
+  if (!nick()) { toast("먼저 상단에 닉네임을 입력해 주세요.", true); $("nick").focus(); }
+  if (Object.keys(myHolds).length && holdEvent !== id) {
+    if (liveCount() > 0) { toast("다른 경기에서 선택한 좌석이 있어요. 먼저 결제하거나 취소해 주세요.", true); return; }
+    myHolds = {}; holdEvent = null;
   }
   cur = events.find(e => e.id === id);
+  $("evCat").textContent = cur.category;
   $("evTitle").textContent = cur.name;
   $("evMeta").textContent = cur.date + " · " + cur.venue;
+  paid = false;
   go("book");
   await loadSeats();
   renderPanel();
 }
 
-/* 예매: 좌석 배치도 */
+/* 서버가 알려 준 내 선택 좌석과 화면 상태를 맞춤 (새로고침해도 유지) */
+function syncMine(seats) {
+  const mine = {};
+  seats.forEach(s => { if (s.status === "mine") mine[s.seat] = s; });
+  Object.keys(mine).forEach(k => {
+    myHolds[k] = { grade: mine[k].grade, price: mine[k].price, expiresAt: Date.now() + mine[k].remaining * 1000, expired: false };
+    holdEvent = cur.id;
+    if (!holdNick) holdNick = nick();
+  });
+  Object.keys(myHolds).forEach(k => { if (!mine[k]) myHolds[k].expired = true; });
+}
+
+/* 좌석 배치도 */
 async function loadSeats() {
   if (!cur) return;
   try {
-    const d = await api(`/events/${cur.id}/seats`);
+    const d = await api(`/events/${cur.id}/seats?nickname=${encodeURIComponent(nick())}`);
+    syncMine(d.seats);
     const rows = {};
     d.seats.forEach(s => { (rows[s.seat[0]] = rows[s.seat[0]] || []).push(s); });
     const map = $("seatmap");
     map.innerHTML = "";
+    let lastGrade = null;
     Object.keys(rows).forEach(letter => {
+      const grade = rows[letter][0].grade;
+      if (grade !== lastGrade) {
+        const z = document.createElement("div");
+        z.className = "zone";
+        z.textContent = grade + " · " + won(rows[letter][0].price);
+        map.appendChild(z);
+        lastGrade = grade;
+      }
       const row = document.createElement("div");
-      row.className = "row";
-      const label = document.createElement("div");
-      label.className = "rl";
-      label.textContent = letter;
-      row.appendChild(label);
-      rows[letter].forEach(s => {
+      row.className = "srow";
+      row.innerHTML = `<span class="rl">${letter}</span>`;
+      rows[letter].forEach((s, i) => {
+        if (i === rows[letter].length / 2) row.insertAdjacentHTML("beforeend", '<span class="gap"></span>');
         const b = document.createElement("button");
         b.textContent = s.seat.slice(1);
         b.title = `${s.seat} · ${s.grade} · ${won(s.price)}`;
         let cls = "g-" + s.grade_key;
         if (s.status === "booked") cls = "booked";
-        if (s.status === "held") {
-          cls = (myHold && myHold.eventId === cur.id && myHold.seat === s.seat) ? "mine" : "held";
-        }
+        if (s.status === "held") cls = "held";
+        if (s.status === "mine") cls = "mine";
         b.className = "seat " + cls;
         if (s.status === "available") b.onclick = () => holdSeat(s);
+        else if (s.status === "mine") b.onclick = () => releaseSeat(s.seat);
         else b.disabled = true;
         row.appendChild(b);
       });
+      row.insertAdjacentHTML("beforeend", `<span class="rl">${letter}</span>`);
       map.appendChild(row);
     });
+    renderPanel();
   } catch (e) {
     toast(e.message, true);
   }
 }
 
 async function holdSeat(s) {
-  if (myHold) return toast("이미 선택한 좌석이 있어요. 결제하거나 선택을 취소하세요.", true);
   try {
     const d = await api(`/events/${cur.id}/seats/${s.seat}/hold`, "POST", { nickname: nick() });
-    myHold = { eventId: cur.id, seat: s.seat, grade: s.grade, price: s.price,
-               nickname: d.nickname, expiresAt: Date.now() + d.expires_in * 1000 };
+    myHolds[s.seat] = { grade: s.grade, price: s.price, expiresAt: Date.now() + d.expires_in * 1000, expired: false };
+    holdEvent = cur.id;
+    holdNick = d.nickname;
     paid = false;
-    toast(`${s.seat} 좌석을 선택했어요. 시간 안에 결제해 주세요.`);
+    toast(`${s.seat} 좌석을 확보했어요.`);
   } catch (e) {
     toast(e.message, true);
   }
-  renderPanel();
-  loadSeats();
+  afterChange();
+}
+
+async function releaseSeat(seat) {
+  const h = myHolds[seat];
+  try {
+    await api(`/events/${holdEvent || cur.id}/seats/${seat}/hold`, "DELETE", { nickname: holdNick || nick() });
+    toast(`${seat} 좌석 선택을 해제했어요.`);
+    delete myHolds[seat];
+  } catch (e) {
+    toast(e.message, true);
+    if (h && (h.expired || Date.now() >= h.expiresAt)) delete myHolds[seat];
+  }
+  afterChange();
+}
+
+async function releaseAll() {
+  for (const seat of Object.keys(myHolds)) {
+    try { await api(`/events/${holdEvent}/seats/${seat}/hold`, "DELETE", { nickname: holdNick || nick() }); }
+    catch (e) { /* 이미 만료된 좌석은 무시 */ }
+    delete myHolds[seat];
+  }
+  toast("선택한 좌석을 모두 취소했어요.");
+  afterChange();
 }
 
 async function pay() {
-  if (!myHold) return;
-  const h = myHold;
+  const seats = Object.keys(myHolds);
+  if (!seats.length) return;
   try {
-    const d = await api(`/events/${h.eventId}/seats/${h.seat}/confirm`, "POST", { nickname: h.nickname });
-    myHold = null;
-    paid = true;
+    const d = await api(`/events/${holdEvent}/confirm`, "POST", { nickname: holdNick || nick(), seats });
+    myHolds = {}; holdEvent = null; paid = true;
     showTicket(d);
   } catch (e) {
     toast(e.message, true);
-    if (Date.now() >= h.expiresAt) myHold = null;
+    Object.keys(myHolds).forEach(k => {
+      if (myHolds[k].expired || Date.now() >= myHolds[k].expiresAt) delete myHolds[k];
+    });
   }
-  renderPanel();
-  loadSeats();
+  afterChange();
 }
 
-async function releaseHold() {
-  if (!myHold) return;
-  const h = myHold;
-  try {
-    await api(`/events/${h.eventId}/seats/${h.seat}/hold`, "DELETE", { nickname: h.nickname });
-    toast(`${h.seat} 좌석 선택을 취소했어요.`);
-    myHold = null;
-  } catch (e) {
-    toast(e.message, true);
-    if (Date.now() >= h.expiresAt) myHold = null;
-  }
+function afterChange() {
+  if (Object.keys(myHolds).length === 0) holdEvent = null;
   renderPanel();
   loadSeats();
 }
 
 function renderPanel() {
-  const step = myHold ? 2 : (paid ? 3 : 1);
+  const keys = Object.keys(myHolds).sort();
+  keys.forEach(k => { if (!myHolds[k].expired && Date.now() >= myHolds[k].expiresAt) myHolds[k].expired = true; });
+  const step = keys.length ? 2 : (paid ? 3 : 1);
   [1, 2, 3].forEach(i => { $("st" + i).className = "step" + (i === step ? " on" : (i < step ? " done" : "")); });
-  $("pEvent").textContent = cur ? cur.name : "-";
-  $("pSeat").textContent = myHold ? myHold.seat : "-";
-  $("pGrade").textContent = myHold ? myHold.grade : "-";
-  $("pPrice").textContent = myHold ? won(myHold.price) : "0원";
-  if (myHold) {
-    const left = Math.max(0, Math.ceil((myHold.expiresAt - Date.now()) / 1000));
-    const m = String(Math.floor(left / 60)).padStart(2, "0");
-    const sec = String(left % 60).padStart(2, "0");
-    $("pTime").textContent = left > 0 ? `${m}:${sec}` : "00:00 (만료됨)";
-  } else {
-    $("pTime").textContent = "-";
-  }
-  $("btnPay").disabled = !myHold;
-  $("btnRelease").disabled = !myHold;
+
+  $("pCount").textContent = `${keys.length} / ${maxSeats}매`;
+  $("pList").innerHTML = keys.length
+    ? keys.map(k => {
+        const h = myHolds[k];
+        return `<div class="pitem${h.expired ? " exp" : ""}">
+          <span class="pill ${GRADE_CLASS[h.grade] || "gray"}">${h.grade}</span>
+          <span class="nm">${k}${h.expired ? " (만료)" : ""}</span>
+          <span class="pr">${won(h.price)}</span>
+          <button class="x" onclick="releaseSeat('${k}')" title="선택 해제">✕</button>
+        </div>`;
+      }).join("")
+    : '<div class="empty-sel"><b>선택한 좌석이 없어요</b><span>왼쪽 배치도에서 좌석을 골라 주세요</span></div>';
+  $("pPrice").textContent = won(keys.reduce((s, k) => s + myHolds[k].price, 0));
+
+  const live = keys.filter(k => !myHolds[k].expired);
+  let left = null;
+  if (live.length) left = Math.max(0, Math.ceil((Math.min(...live.map(k => myHolds[k].expiresAt)) - Date.now()) / 1000));
+  $("pTime").textContent = left === null ? (keys.length ? "만료됨" : "--:--")
+    : String(Math.floor(left / 60)).padStart(2, "0") + ":" + String(left % 60).padStart(2, "0");
+  $("timerBox").className = "timer-box" + ((left !== null && left <= 60) || (keys.length && !live.length) ? " warn" : "");
+  $("btnPay").disabled = keys.length === 0;
+  $("btnPay").textContent = keys.length ? `${keys.length}매 결제하기` : "결제하기";
+  $("btnRelease").disabled = keys.length === 0;
 }
 
 /* 결제 완료 모달 */
 function showTicket(d) {
-  $("mEvent").textContent = d.event;
-  $("mSeat").textContent = `${d.seat} · ${d.grade}`;
-  $("mPrice").textContent = `결제 금액 ${won(d.price)}`;
   $("mNo").textContent = d.booking_no;
+  $("mEvent").textContent = d.event;
+  $("mSeat").textContent = d.seats.map(s => `${s.seat}(${s.grade})`).join(", ");
+  $("mPrice").textContent = `${d.seats.length}매 · ${won(d.total)}`;
   $("modal").style.display = "flex";
 }
-
 function closeModal(goMy) {
   $("modal").style.display = "none";
   if (goMy) go("my");
@@ -413,30 +391,38 @@ function closeModal(goMy) {
 async function loadMy() {
   const box = $("mylist");
   if (!nick()) {
-    box.innerHTML = '<div class="empty">상단에 닉네임을 입력하면 예매 내역을 조회할 수 있어요.</div>';
+    $("myWho").textContent = "상단에 닉네임을 입력하면 예매 내역을 볼 수 있어요.";
+    box.innerHTML = '<div class="blank"><b>닉네임을 입력해 주세요</b>예매할 때 사용한 닉네임으로 조회해요.</div>';
     return;
   }
+  $("myWho").textContent = `'${nick()}' 님의 예매 내역이에요.`;
   try {
     const d = await api("/bookings?nickname=" + encodeURIComponent(nick()));
-    if (d.bookings.length === 0) {
-      box.innerHTML = '<div class="empty">예매 내역이 없어요.</div>';
+    if (!d.bookings.length) {
+      box.innerHTML = '<div class="blank"><b>예매 내역이 없어요</b>경기·공연 메뉴에서 좌석을 예매해 보세요.</div>';
       return;
     }
-    box.innerHTML = d.bookings.map(b => `
-      <div class="ticket">
-        <div class="t-main">
-          <h4>${b.event}</h4>
-          <div>📅 ${b.date}</div>
-          <div>📍 ${b.venue}</div>
-          <div>💺 ${b.seat} · ${b.grade} · ${won(b.price)}</div>
-          <div>🕒 예매일시 ${b.booked_at}</div>
+    const colors = { vip: "var(--vip)", r: "var(--r)", s: "var(--s)" };
+    box.innerHTML = d.bookings.map(b => {
+      const gc = GRADE_CLASS[b.grade] || "gray";
+      return `
+      <div class="tk">
+        <div class="tk-color" style="background:${colors[gc] || "var(--mute)"}"></div>
+        <div class="tk-main">
+          <div class="t1"><span class="pill ${gc}">${esc(b.grade)}</span><span class="pill gray">${esc(b.seat)}</span></div>
+          <h4>${esc(b.event)}</h4>
+          <div class="d">
+            <span>${esc(b.date)} · ${esc(b.venue)}</span>
+            <span>${won(b.price)} · 예매일시 ${esc(b.booked_at)}</span>
+          </div>
         </div>
-        <div class="t-side">
-          <div class="t-no">예매번호</div>
-          <div class="t-num">${b.booking_no}</div>
-          <button class="btn sub" onclick="cancelBooking(${b.event_id}, '${b.seat}')">예매 취소</button>
+        <div class="tk-side">
+          <span class="lb">예매번호</span>
+          <span class="no">${esc(b.booking_no)}</span>
+          <button class="btn ghost sm" onclick="cancelBooking(${b.event_id}, '${esc(b.seat)}')">예매 취소</button>
         </div>
-      </div>`).join("");
+      </div>`;
+    }).join("");
   } catch (e) {
     toast(e.message, true);
   }
@@ -454,7 +440,7 @@ async function cancelBooking(eventId, seat) {
 }
 
 $("btnPay").onclick = pay;
-$("btnRelease").onclick = releaseHold;
+$("btnRelease").onclick = releaseAll;
 setInterval(renderPanel, 1000);
 loadEvents();
 </script>
