@@ -4,7 +4,7 @@
 
 - 배포 주소: http://<퍼블릭IP>:8080 
 - 저장소: https://github.com/Aa26178787/ticket_booking
-- 작업 버전: 1cc26b8
+- 작업 버전: 662901b
 
 ## 1. 서비스 소개
 
