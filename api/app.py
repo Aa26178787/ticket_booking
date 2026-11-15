@@ -1,14 +1,28 @@
 import os
+from datetime import datetime, timedelta, timezone
+
 import redis
 from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 r = redis.Redis(host=os.environ.get("REDIS_HOST", "redis"), port=6379, decode_responses=True)
 HOLD_SECONDS = int(os.environ.get("HOLD_SECONDS", "300"))
+KST = timezone(timedelta(hours=9))
 
 EVENTS = {
-    1: {"id": 1, "name": "경기 A (홈)"},
-    2: {"id": 2, "name": "경기 B (원정)"},
+    1: {"id": 1, "name": "챔피언스 매치 블루 vs 레드", "category": "스포츠",
+        "date": "2026-12-05 (토) 18:30", "venue": "티켓온 스타디움"},
+    2: {"id": 2, "name": "올스타 페스티벌 드림 vs 나눔", "category": "스포츠",
+        "date": "2026-12-12 (토) 14:00", "venue": "티켓온 아레나"},
+}
+
+# 행(row)별 등급: (등급 이름, 가격, 화면 색상 키)
+GRADES = {
+    "A": ("VIP석", 50000, "vip"),
+    "B": ("VIP석", 50000, "vip"),
+    "C": ("R석", 35000, "r"),
+    "D": ("R석", 35000, "r"),
+    "E": ("일반석", 20000, "s"),
 }
 SEATS = [f"{row}{col}" for row in "ABCDE" for col in range(1, 9)]  # A1~E8, 40석
 
@@ -38,7 +52,9 @@ def health():
 
 @app.get("/api/events")
 def list_events():
-    return jsonify(events=list(EVENTS.values()))
+    prices = [g[1] for g in GRADES.values()]
+    events = [{**e, "min_price": min(prices), "max_price": max(prices)} for e in EVENTS.values()]
+    return jsonify(events=events)
 
 
 @app.get("/api/events/<int:event_id>/seats")
@@ -49,14 +65,18 @@ def get_seats(event_id):
     booked = r.smembers(f"booked:{event_id}")
     seats = []
     for seat in SEATS:
+        grade, price, grade_key = GRADES[seat[0]]
+        item = {"seat": seat, "grade": grade, "price": price, "grade_key": grade_key}
         if seat in booked:
-            seats.append({"seat": seat, "status": "booked"})
-            continue
-        ttl = r.ttl(f"hold:{event_id}:{seat}")
-        if ttl > 0:
-            seats.append({"seat": seat, "status": "held", "remaining": ttl})
+            item["status"] = "booked"
         else:
-            seats.append({"seat": seat, "status": "available"})
+            ttl = r.ttl(f"hold:{event_id}:{seat}")
+            if ttl > 0:
+                item["status"] = "held"
+                item["remaining"] = ttl
+            else:
+                item["status"] = "available"
+        seats.append(item)
     return jsonify(seats=seats)
 
 
@@ -92,9 +112,18 @@ def confirm_seat(event_id, seat):
         return error("확보 시간이 만료되었습니다", 410)
     if holder != nickname:
         return error("다른 사람이 선택한 좌석입니다", 403)
+
+    grade, price, _ = GRADES[seat[0]]
+    booking_no = f"T{r.incr('booking_seq'):06d}"
+    booked_at = datetime.now(KST).strftime("%Y-%m-%d %H:%M")
+    r.hset(f"booking:{event_id}:{seat}", mapping={
+        "no": booking_no, "nickname": nickname, "booked_at": booked_at,
+    })
     r.sadd(f"booked:{event_id}", seat)
+    r.sadd(f"user:{nickname}", f"{event_id}:{seat}")
     r.delete(hold_key)
-    return jsonify(seat=seat, status="booked")
+    return jsonify(booking_no=booking_no, event=EVENTS[event_id]["name"], seat=seat,
+                   grade=grade, price=price, booked_at=booked_at)
 
 
 @app.delete("/api/events/<int:event_id>/seats/<seat>/hold")
@@ -110,6 +139,49 @@ def cancel_hold(event_id, seat):
     if holder != nickname:
         return error("본인이 선택한 좌석만 취소할 수 있습니다", 403)
     r.delete(hold_key)
+    return jsonify(seat=seat, status="available")
+
+
+@app.get("/api/bookings")
+def my_bookings():
+    nickname = request.args.get("nickname", "").strip()
+    if not nickname:
+        return error("닉네임을 입력하세요", 400)
+    items = []
+    for key in r.smembers(f"user:{nickname}"):
+        event_id_text, seat = key.split(":")
+        event_id = int(event_id_text)
+        info = r.hgetall(f"booking:{event_id}:{seat}")
+        if not info or event_id not in EVENTS:
+            continue
+        grade, price, _ = GRADES[seat[0]]
+        items.append({
+            "booking_no": info["no"], "event_id": event_id,
+            "event": EVENTS[event_id]["name"], "date": EVENTS[event_id]["date"],
+            "venue": EVENTS[event_id]["venue"], "seat": seat,
+            "grade": grade, "price": price, "booked_at": info["booked_at"],
+        })
+    items.sort(key=lambda x: x["booked_at"], reverse=True)
+    return jsonify(bookings=items)
+
+
+@app.delete("/api/events/<int:event_id>/seats/<seat>/booking")
+def cancel_booking(event_id, seat):
+    err = check(event_id, seat)
+    if err:
+        return err
+    nickname = get_nickname()
+    if not nickname:
+        return error("닉네임을 입력하세요", 400)
+    key = f"booking:{event_id}:{seat}"
+    info = r.hgetall(key)
+    if not info:
+        return error("예매 내역이 없습니다", 404)
+    if info.get("nickname") != nickname:
+        return error("본인의 예매만 취소할 수 있습니다", 403)
+    r.srem(f"booked:{event_id}", seat)
+    r.srem(f"user:{nickname}", f"{event_id}:{seat}")
+    r.delete(key)
     return jsonify(seat=seat, status="available")
 
 
